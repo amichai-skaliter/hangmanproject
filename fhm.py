@@ -2,6 +2,7 @@
 # All secret words are animals.
 # Some code lines are splitted to several lines,  
 # in order to not pass the "Pep 8" 79 characters limit.
+# I did not use the check_valid_input function, and merged it with try_update_letter_guessed function.
 
 def hangman_photos_maker():
     """Creates a dictionary for different Hangman statses in the game.
@@ -83,12 +84,14 @@ def check_file_input():
     :rtype: str
     """
     import errno # Module used to check if the file exists
+    import os.path # Used to Check the file extension.
     file_path = ""
+    file_ext = ""
     while(True): # Loop that will run until a valid file path will be inserted.
         file_path = input("Please Enter the words file location: ")
-        file_path = file_path.lower()
-         #validating that the player chose a text file.
-        if(file_path[-3:] != "txt"):
+        file_ext = os.path.splitext(file_path)[1]
+        #validating that the player chose a text file.
+        if(file_ext != ".txt"):
             print("\nYou can only choose a text file.\n")
         else:    
             try: # If we can open the file, the file path will be returned.
@@ -154,13 +157,11 @@ def show_hidden_word(secret_word, old_letters_guessed):
     :rtype: list
     """
     hidden_word_list = []    # The list will contain the hidden word.
-    index = 0    # Index for the hidden_word_list.
     for letter in secret_word:
         if(letter in old_letters_guessed): 
-            hidden_word_list.append(secret_word[index])
+            hidden_word_list.append(letter)
         else:
-            hidden_word_list.append("__")
-        index += 1  
+            hidden_word_list.append("__")  
     return hidden_word_list 
     
 def try_update_letter_guessed(letter_guessed, old_letters_guessed):
@@ -189,7 +190,7 @@ def try_update_letter_guessed(letter_guessed, old_letters_guessed):
         return "correct_guess"
     else:
         return "wrong_guess"    
-  
+        
 def check_win(secret_word, old_letters_guessed):
     """Checks if the player guessed all letters and won.
    :param secret_word: the secret word for the game. 
@@ -205,84 +206,104 @@ def check_win(secret_word, old_letters_guessed):
             return False 
     return True
 
-def turn_result(guess_status):
-   """
-   :param guess_status: the secret word for the game. 
-   :type guess_status: str
-   :return: True if the player, False if not.
-   :rtype: bool
-   """ 
-
-def main(): 
-    global HANGMAN_PHOTOS
-    global MAX_TRIES
+def game_play():
+    """ Starts a new game, and new rounds until the player wants to stop playing.
+    :rtype: None
+    """ 
     global secret_word
-    global old_letters_guessed
-    HANGMAN_PHOTOS = {0:"",1:"",2:"", 3:"", 4:"", 5:"", 6:""}
+    want_to_continue = "1"
     MAX_TRIES = 6
-    num_of_tries = MAX_TRIES
-    old_letters_guessed = []   
-    want_to_continue = "1"  # Used to allow the player to play again.
-    # The next 3 code lines used for clearing the screen.
-    want_screen_clear = ''  
-    import os    
-    cls = lambda: os.system('cls')
-    hangman_photos_maker()  #Generates the hangman photos dict.  
     while want_to_continue == "1":
-    # This loop allows the player play the game multiple times.
         num_of_tries = MAX_TRIES
         old_letters_guessed = []  # Resets the list before a new game.  
         secret_word = print_intro() # Prints a intro,and generates secret_word
-        while num_of_tries >= 1:
-            print_hangman(num_of_tries) 
-            hidden_word = show_hidden_word(secret_word, old_letters_guessed)
+        round_play(num_of_tries, secret_word, old_letters_guessed)
+        want_to_continue = \
+        input("Enter 1 to play again, "
+        "enter any other key to exit: ")
+
+def round_play(num_of_tries, secret_word, old_letters_guessed):
+    """Plays a round of the game.
+    :param num_of_tries: number of tries the player has.
+    :param secret_word: the secret word for the game.
+    :param old_letters_guessed: the letters that the player already guessed.
+    :type num_of_tries: int
+    :type secret_word: str
+    :type old_letters_guessed: list
+    :return: True if the player, False if not.
+    :rtype: None
+    """ 
+    # The next 3 code lines used for clearing the screen.
+    import os  
+    want_screen_clear = '' 
+    cls = lambda: os.system('cls')
+    while num_of_tries >= 1:
+        print_hangman(num_of_tries) 
+        hidden_word = show_hidden_word(secret_word, old_letters_guessed)
+        print(*hidden_word, sep = "    ") 
+        print("\nYou have %s mistakes left\n" % num_of_tries)
+        if(len(old_letters_guessed) >= 1):
+        # Allows the player to clear the screen only after the first guess.
+            want_screen_clear = \
+            input("Enter c to clear screen, "
+            "enter any other key to continue:\n ")
+        if(want_screen_clear.lower() == 'c'):
+            cls() 
+            want_screen_clear = ""
+            #Printing the current state of the game after screen clear:
+            print_hangman(num_of_tries)    
+            print(*hidden_word, sep = "    ")    
+            print("\nYou have %s mistakes left\n" % num_of_tries)
+        letter_guessed = input("Guess a letter: ")
+        num_of_tries = \
+        guess_result(num_of_tries, letter_guessed, old_letters_guessed)
+        if(check_win(secret_word, old_letters_guessed) == True):
+            hidden_word = \
+            show_hidden_word(secret_word, old_letters_guessed)
             print(*hidden_word, sep = "    ") 
-            print("\nYou have %s tries left\n" % num_of_tries)
-            if(len(old_letters_guessed) >= 1):
-            # Allows the player to clear the screen only after the first guess.
-                want_screen_clear = \
-                input("Enter c to clear screen, "
-                "enter any other key to continue:\n ")
-                if(want_screen_clear.lower() == 'c'):
-                    cls() 
-                    want_screen_clear = ""
-                    #Printing the current state of the game after screen clear.
-                    print_hangman(num_of_tries)    
-                    print(*hidden_word, sep = "    ")    
-                    print("\nYou have %s tries left\n" % num_of_tries)
-            gussed_letter = input("Guess a letter: ")
-            guess_status = \
-            try_update_letter_guessed(gussed_letter, old_letters_guessed)
-            if(guess_status == "correct_guess"):
-                print("\nGood guess!\n")
-                if(check_win(secret_word, old_letters_guessed) == True):
-                    hidden_word = \
-                    show_hidden_word(secret_word, old_letters_guessed)
-                    print(*hidden_word, sep = "    ") 
-                    print("\nYOU WIN!, GOOD JOB\n")
-                    want_to_continue = \
-                    input("Enter 1 to play again,"
-                   " enter any other key to exit: ")
-                    break    # Breaking the loop in order to start a new game.
-            elif(guess_status == "wrong_guess"):
-                num_of_tries -= 1
-                print("\n:(\n")
-            elif(guess_status == "invalid"):     
-                print("X ")
-                print("\nInvalid input\n")
-            elif(guess_status == "already_chosen"):
-                print("X ")
-                print("\nYou already chose this letter\n")
-                print(*sorted(old_letters_guessed), sep="--->")
-                print("\n")
-        if(num_of_tries == 0):
-            print_hangman(num_of_tries)
-            print("\nYOU LOST\n")
-            want_to_continue = \
-            input("Enter 1 to play again, "
-            "enter any other key to exit: ")
-            
+            print("\nYOU WIN!, GOOD JOB\n")
+            return # Breaking the loop in order to start a new game.        
+    print_hangman(num_of_tries)
+    print("\nYOU LOST\n")   
     
+def guess_result(num_of_tries, letter_guessed, old_letters_guessed):
+    """verifys that the guess is valid, and returns its result.
+    :param num_of_tries: number of tries the player has.
+    :param letter_guessed: The letter that the player guessed. 
+    :param old_letters_guessed: the letters that the player already guessed.
+    :type num_of_tries: int
+    :type letter_guessed: str
+    :type old_letters_guessed: list
+    :return: num_of_tries
+    :rtype: int
+    """ 
+    guess_status = \
+    try_update_letter_guessed(letter_guessed, old_letters_guessed) 
+    while(guess_status == "invalid" or guess_status == "already_chosen"):
+        if(guess_status == "invalid"):     
+            print("X ")
+            print("\nInvalid input\n")
+        if(guess_status == "already_chosen"):
+            print("X ")
+            print("\nYou already chose this letter\n")
+            print(*sorted(old_letters_guessed), sep="--->")
+        print("\n")
+        letter_guessed = input("Guess a letter: ")
+        guess_status = \
+        try_update_letter_guessed(letter_guessed, old_letters_guessed)
+    if(guess_status == "correct_guess"):
+        print("\nGood guess!\n")
+    elif(guess_status == "wrong_guess"):
+        num_of_tries -= 1
+        print("\n:(\n") 
+    return num_of_tries
+
+
+def main(): 
+    global HANGMAN_PHOTOS
+    HANGMAN_PHOTOS = {0:"",1:"",2:"", 3:"", 4:"", 5:"", 6:""}
+    hangman_photos_maker()  #Generates the hangman photos dict.
+    game_play()
     print("\nThank you for playing, goodbye!\n")
  
 if __name__ == "__main__":
